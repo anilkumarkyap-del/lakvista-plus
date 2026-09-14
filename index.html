@@ -1,66 +1,80 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LAKVISTA™ PLUS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAKVISTA-PLUS</title>
 <style>
-body{font-family:Arial;background:#eef4fb;margin:0;padding:16px}
-.card{max-width:700px;margin:auto;background:#fff;border-radius:18px;padding:18px}
+body{font-family:Arial;background:#eef3fb;margin:0;padding:16px}
+.card{max-width:720px;margin:auto;background:#fff;padding:20px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
 h1{text-align:center;color:#0A4DA3;margin:0}
-.sub{text-align:center;color:#64748b;margin-bottom:15px}
-.item{margin:10px 0}.head{display:flex;justify-content:space-between;font-size:14px;font-weight:bold}
-input[type=text],input[type=range]{width:100%}
-input[type=text]{padding:8px;border:1px solid #ccc;border-radius:8px}
-button{width:100%;padding:12px;background:#0A4DA3;color:#fff;border:0;border-radius:10px;margin-top:12px}
-.result,.box{margin-top:14px;background:#f8fbff;padding:12px;border-radius:12px}
-.rate{font-size:38px;font-weight:bold;text-align:center;color:#0A4DA3}
-.score{text-align:center;font-size:20px}
-svg{width:100%;height:260px}
+.sub{text-align:center;color:#64748b;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-weight:bold;font-size:14px}
+input[type=text],input[type=date]{width:100%;padding:8px;border:1px solid #ccc;border-radius:8px}
+.row{margin:10px 0}.head{display:flex;justify-content:space-between;font-size:14px;font-weight:bold}
+input[type=range]{width:100%}
+button{width:100%;padding:12px;background:#0A4DA3;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;margin-top:16px;cursor:pointer}
+.result{margin-top:18px;background:#f5f9ff;padding:15px;border-radius:12px;text-align:center}
+.badge{font-size:44px;font-weight:bold;color:#0A4DA3}
+ul{padding-left:20px}
+svg{width:100%;height:280px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+@media print{button{display:none}body{background:#fff}}
 </style>
 </head>
 <body>
-<div class="card">
-<h1>LAKVISTA™ PLUS</h1>
+
+<div class="card" id="report">
+<h1>LAKVISTA-PLUS</h1>
 <div class="sub">Business Credit Rating Simulator</div>
 
-<input type="text" id="company" placeholder="Company Name">
+<div class="grid">
+<div>
+<label>Company Name</label>
+<input id="company" type="text" placeholder="Enter company">
+</div>
+<div>
+<label>Assessment Date</label>
+<input id="adate" type="date">
+</div>
+</div>
+
 <div id="sliders"></div>
 
 <button onclick="calculate()">Calculate Credit Rating</button>
 
 <div class="result">
-<div class="rate" id="rating">--</div>
-<div class="score" id="score">0 / 100</div>
-<p id="desc" align="center">Business Credit Rating</p>
+<div class="badge" id="grade">--</div>
+<h2 id="score">Credit Score: --</h2>
+<p id="risk">Move sliders and calculate</p>
 </div>
 
-<div class="box">
 <h3>Financial Strength Radar</h3>
-<svg viewBox="0 0 300 300">
-<g stroke="#d1d5db" fill="none">
-<circle cx="150" cy="150" r="40"/>
-<circle cx="150" cy="150" r="80"/>
-<circle cx="150" cy="150" r="120"/>
-</g>
-<polygon id="radar" fill="#2563EB55" stroke="#2563EB" stroke-width="2"/>
-</svg>
-</div>
 
-<div class="box">
+<svg viewBox="0 0 300 300">
+<g stroke="#D1D5DB" fill="none">
+<polygon points="150,20 225,45 275,100 275,200 225,255 150,280 75,255 25,200 25,100 75,45"/>
+<polygon points="150,55 205,73 240,110 240,190 205,227 150,245 95,227 60,190 60,110 95,73"/>
+<polygon points="150,90 185,101 205,120 205,180 185,199 150,210 115,199 95,180 95,120 115,101"/>
+</g>
+<polygon id="shape" fill="#2563EB55" stroke="#2563EB" stroke-width="2"/>
+</svg>
+
+<div class="grid">
+<div>
 <h3>Strengths</h3>
 <ul id="strengths"></ul>
 </div>
-
-<div class="box">
+<div>
 <h3>Recommendations</h3>
-<ul id="reco"></ul>
+<ul id="recommendations"></ul>
+</div>
 </div>
 
-<div class="box">
 <h3>Rating Rationale</h3>
 <p id="rationale"></p>
-</div>
 
 <button onclick="window.print()">Download PDF Report</button>
 </div>
@@ -71,94 +85,97 @@ const F=[
 ["Current Ratio",0,5,2],
 ["Quick Ratio",0,3,1.2],
 ["Debt-Equity Ratio",0,5,1],
-["Interest Coverage",0,15,5],
+["Interest Coverage Ratio",0,15,5],
 ["ROA (%)",0,25,10],
 ["ROCE (%)",0,30,15],
-["Net Profit Margin",0,30,12],
-["Operating Margin",0,30,18],
+["Net Profit Margin (%)",0,30,12],
+["Operating Profit Margin (%)",0,30,18],
 ["Total Asset Turnover",0,3,1.5]
 ];
 
-const box=document.getElementById("sliders");
-F.forEach((x,i)=>{
-box.innerHTML+=`
-<div class="item">
+const S=document.getElementById("sliders");
+
+F.forEach((f,i)=>{
+S.innerHTML+=`
+<div class="row">
 <div class="head">
-<span>${i+1}. ${x[0]}</span>
-<span id="v${i}">${x[3]}</span>
+<span>${i+1}. ${f[0]}</span>
+<span id="v${i}">${f[3]}</span>
 </div>
-<input type="range" id="s${i}" min="${x[1]}" max="${x[2]}"
-step="0.1" value="${x[3]}"
-oninput="v${i}.innerHTML=this.value">
+<input type="range" id="s${i}" min="${f[1]}" max="${f[2]}" step="0.1"
+value="${f[3]}"
+oninput="document.getElementById('v${i}').innerHTML=this.value">
 </div>`;
 });
 
-function norm(i,v){
-const n=[
-v/100,
-Math.min(v,2)/2,
-Math.min(v,1),
-Math.max(0,(5-v))/5,
-Math.min(v,10)/10,
-Math.min(v,25)/25,
-Math.min(v,30)/30,
-Math.min(v,30)/30,
-Math.min(v,30)/30,
-Math.min(v,2)/2];
-return n[i];
+function n(i,v){
+switch(i){
+case 0:return v/100;
+case 1:return Math.min(v,2)/2;
+case 2:return Math.min(v,1);
+case 3:return Math.max(0,(5-v))/5;
+case 4:return Math.min(v,10)/10;
+case 5:return Math.min(v,20)/20;
+case 6:return Math.min(v,25)/25;
+case 7:return Math.min(v,20)/20;
+case 8:return Math.min(v,25)/25;
+case 9:return Math.min(v,2)/2;
+}}
+
+function draw(vals){
+const cx=150,cy=150,R=120;let pts=[];
+vals.forEach((v,i)=>{
+const a=(-90+i*36)*Math.PI/180;
+const r=R*v;
+pts.push((cx+r*Math.cos(a))+","+(cy+r*Math.sin(a)));
+});
+shape.setAttribute("points",pts.join(" "));
 }
 
 function calculate(){
-let score=0,arr=[];
+let vals=[],total=0;
+
 for(let i=0;i<10;i++){
-let val=parseFloat(document.getElementById("s"+i).value);
-let n=norm(i,val);
-score+=n*10;
-arr.push({name:F[i][0],n});
+let raw=parseFloat(document.getElementById("s"+i).value);
+let sc=n(i,raw);
+vals.push({name:F[i][0],score:sc});
+total+=sc*10;
 }
-score=Math.round(score);
 
-let r,d;
-if(score>=90){r="AAA";d="Exceptional Credit Quality";}
-else if(score>=80){r="AA";d="Very Strong Credit Profile";}
-else if(score>=70){r="A";d="Strong Financial Stability";}
-else if(score>=60){r="BBB";d="Adequate Credit Strength";}
-else if(score>=50){r="BB";d="Moderate Credit Risk";}
-else if(score>=40){r="B";d="High Credit Risk";}
-else{r="C";d="Very High Default Risk";}
+total=Math.round(total);
 
-rating.innerHTML=r;
-score.innerHTML="Credit Score : "+score+"/100";
-desc.innerHTML=d;
+let g,d;
+if(total>=90){g="AAA";d="Exceptional Credit Quality";}
+else if(total>=80){g="AA";d="Very Strong Credit Profile";}
+else if(total>=70){g="A";d="Strong Financial Stability";}
+else if(total>=60){g="BBB";d="Adequate Credit Strength";}
+else if(total>=50){g="BB";d="Moderate Credit Risk";}
+else if(total>=40){g="B";d="High Credit Risk";}
+else{g="C";d="Very High Default Risk";}
 
-// Radar
-let pts="";
-arr.forEach((o,i)=>{
-let ang=(-90+i*36)*Math.PI/180;
-let rr=120*o.n;
-let x=150+rr*Math.cos(ang);
-let y=150+rr*Math.sin(ang);
-pts+=`${x},${y} `;
-});
-radar.setAttribute("points",pts);
+grade.innerHTML=g;
+score.innerHTML="Credit Score: "+total+"/100";
+risk.innerHTML=d;
 
-// Strengths
-arr.sort((a,b)=>b.n-a.n);
+draw(vals);
+
+let sorted=[...vals].sort((a,b)=>b.score-a.score);
+
 strengths.innerHTML="";
-arr.slice(0,3).forEach(x=>{
-strengths.innerHTML+=<li><b>${x.name}</b></li>;
+sorted.slice(0,3).forEach(x=>{
+strengths.innerHTML+=`<li>${x.name}</li>`;
 });
 
-// Recommendations
-reco.innerHTML="";
-arr.slice(-3).forEach(x=>{
-reco.innerHTML+=<li>Improve <b>${x.name}</b></li>;
+recommendations.innerHTML="";
+sorted.slice(-3).forEach(x=>{
+recommendations.innerHTML+=`<li>Improve ${x.name}</li>`;
 });
 
-// Rationale
-const c=company.value||"the company";
-rationale.innerHTML=LAKVISTA assigns <b>${r}</b> to <b>${c}</b> with a credit score of <b>${score}/100</b>. The rating is based on liquidity, solvency, profitability and operational efficiency indicators.;
+let c=company.value||"the company";
+rationale.innerHTML=`LAKVISTA-PLUS assigns a <b>${g}</b> rating to <b>${c}</b> with a credit score of <b>${total}/100</b>. The assessment is based on liquidity, solvency, profitability and efficiency indicators.`;
 }
+
+adate.value=new Date().toISOString().split("T")[0];
 calculate();
 </script>
 </body>
