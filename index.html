@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,22 +6,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>LAKVISTA-PLUS</title>
 <style>
-body{font-family:Arial;background:#eef4fb;margin:0;padding:16px}
-.card{max-width:760px;margin:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+body{font-family:Arial,Helvetica,sans-serif;background:#eef4fb;margin:0;padding:16px}
+.card{max-width:800px;margin:auto;background:#fff;padding:20px;border-radius:18px;box-shadow:0 4px 15px rgba(0,0,0,.12)}
 h1{text-align:center;color:#0A4DA3;margin:0}
-.sub{text-align:center;color:#64748b;margin-bottom:16px}
+.sub{text-align:center;color:#64748b;margin-bottom:20px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-weight:bold;font-size:14px}
 input[type=text],input[type=date]{width:100%;padding:8px;border:1px solid #ccc;border-radius:8px}
-.item{margin:10px 0}.head{display:flex;justify-content:space-between;font-size:14px;font-weight:bold}
+.row{margin:12px 0}
+.head{display:flex;justify-content:space-between;font-size:14px;font-weight:bold}
 input[type=range]{width:100%}
-button{width:100%;padding:12px;border:0;border-radius:10px;background:#0A4DA3;color:#fff;font-size:16px;font-weight:bold;margin-top:15px;cursor:pointer}
-.result{background:#f5f9ff;border-radius:12px;padding:15px;margin-top:18px;text-align:center}
-#grade{font-size:46px;font-weight:bold;color:#0A4DA3}
-svg{width:100%;height:280px}
+button{width:100%;padding:13px;background:#0A4DA3;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:16px}
+.result{background:#f5f9ff;border-radius:12px;padding:16px;margin-top:20px;text-align:center}
+#grade{font-size:48px;font-weight:bold;color:#0A4DA3}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 ul{padding-left:20px}
+svg{width:100%;height:300px}
 @media(max-width:700px){.grid,.cols{grid-template-columns:1fr}}
-@media print{button{display:none}body{background:#fff}}
+@media print{
+button{display:none}
+body{background:#fff}
+.card{box-shadow:none}
+}
 </style>
 </head>
 <body>
@@ -43,15 +50,15 @@ ul{padding-left:20px}
 
 <div id="sliders"></div>
 
-<button onclick="calc()">Calculate Credit Rating</button>
+<button onclick="calculate()">Calculate Credit Rating</button>
 
 <div class="result">
 <div id="grade">--</div>
 <h2 id="score">Credit Score : --</h2>
-<div id="risk">Move sliders and calculate</div>
+<p id="risk">Move sliders and calculate</p>
 </div>
 
-<h3>Financial Strength Radar</h3>
+<h2>Financial Strength Radar</h2>
 
 <svg viewBox="0 0 300 300">
 <g stroke="#d1d5db" fill="none">
@@ -63,14 +70,17 @@ ul{padding-left:20px}
 </svg>
 
 <div class="cols">
+
 <div>
 <h3>Strengths</h3>
 <ul id="strengths"></ul>
 </div>
+
 <div>
 <h3>Recommendations</h3>
-<ul id="recom"></ul>
+<ul id="recommendations"></ul>
 </div>
+
 </div>
 
 <h3>Rating Rationale</h3>
@@ -85,103 +95,183 @@ const factors=[
 ["Payment History",0,100,85],
 ["Current Ratio",0,5,2],
 ["Quick Ratio",0,3,1.2],
-["Debt-Equity Ratio",0,5,1],
+["Debt–Equity Ratio",0,5,1],
 ["Interest Coverage Ratio",0,15,5],
-["ROA (%)",0,25,10],
-["ROCE (%)",0,30,15],
+["Cash Flow Strength",0,100,75],
 ["Net Profit Margin (%)",0,30,12],
-["Operating Profit Margin (%)",0,30,18],
-["Total Asset Turnover",0,3,1.5]
+["Business Stability (Years)",0,30,10],
+["Industry Risk",1,5,2],
+["Management Quality",1,5,4]
 ];
 
-const box=document.getElementById("sliders");
+const sliders=document.getElementById("sliders");
 
 factors.forEach((f,i)=>{
-box.innerHTML+=`
-<div class="item">
+sliders.innerHTML+=`
+<div class="row">
 <div class="head">
 <span>${i+1}. ${f[0]}</span>
 <span id="v${i}">${f[3]}</span>
 </div>
-<input type="range" id="s${i}" min="${f[1]}" max="${f[2]}"
+<input type="range" id="s${i}"
+min="${f[1]}" max="${f[2]}"
 step="0.1" value="${f[3]}"
 oninput="document.getElementById('v${i}').innerText=this.value">
 </div>`;
 });
 
-function norm(i,v){
-switch(i){
-case 0:return v/100;
-case 1:return Math.min(v,2)/2;
-case 2:return Math.min(v,1);
-case 3:return Math.max(0,(5-v))/5;
-case 4:return Math.min(v,10)/10;
-case 5:return Math.min(v,20)/20;
-case 6:return Math.min(v,25)/25;
-case 7:return Math.min(v,20)/20;
-case 8:return Math.min(v,25)/25;
-case 9:return Math.min(v,2)/2;
-}
+const weight=[20,10,5,15,15,10,10,5,5,5];
+
+function normalize(index,value){
+
+switch(index){
+
+case 0:return value/100;
+
+case 1:return Math.min(value,2)/2;
+
+case 2:return Math.min(value,1);
+
+case 3:return Math.max(0,(5-value))/5;
+
+case 4:return Math.min(value,10)/10;
+
+case 5:return value/100;
+
+case 6:return Math.min(value,20)/20;
+
+case 7:return Math.min(value,20)/20;
+
+case 8:return (5-value)/4;
+
+case 9:return (value-1)/4;
+
 }
 
-function radar(vals){
+}
+
+function drawRadar(scores){
+
 const cx=150,cy=150,R=120;
+
 let pts=[];
-vals.forEach((v,i)=>{
-let a=(-90+i*36)*Math.PI/180;
-let rr=R*v;
-pts.push((cx+rr*Math.cos(a))+","+(cy+rr*Math.sin(a)));
+
+scores.forEach((s,i)=>{
+
+const ang=(-90+i*36)*Math.PI/180;
+
+const rr=R*s;
+
+const x=cx+rr*Math.cos(ang);
+
+const y=cy+rr*Math.sin(ang);
+
+pts.push(`${x},${y}`);
+
 });
-shape.setAttribute("points",pts.join(" "));
+
+document.getElementById("shape").setAttribute("points",pts.join(" "));
+
 }
 
-function calc(){
+function calculate(){
 
-let total=0,list=[];
+let total=0;
+
+let items=[];
 
 for(let i=0;i<10;i++){
-let raw=parseFloat(document.getElementById("s"+i).value);
-let sc=norm(i,raw);
-total+=sc*10;
-list.push({name:factors[i][0],score:sc});
+
+const raw=parseFloat(document.getElementById("s"+i).value);
+
+const sc=normalize(i,raw);
+
+total+=sc*weight[i];
+
+items.push({
+name:factors[i][0],
+score:sc
+});
+
 }
 
 total=Math.round(total);
 
-let g,r;
-if(total>=90){g="AAA";r="Exceptional Credit Quality";}
-else if(total>=80){g="AA";r="Very Strong Credit Profile";}
-else if(total>=70){g="A";r="Strong Financial Stability";}
-else if(total>=60){g="BBB";r="Adequate Credit Strength";}
-else if(total>=50){g="BB";r="Moderate Credit Risk";}
-else if(total>=40){g="B";r="High Credit Risk";}
-else{g="C";r="Very High Default Risk";}
+let grade,risk;
 
-grade.innerText=g;
-score.innerText="Credit Score : "+total+"/100";
-risk.innerText=r;
+if(total>=90){
+grade="AAA";
+risk="Exceptional Credit Quality";
+}
+else if(total>=80){
+grade="AA";
+risk="Very Strong Credit Profile";
+}
+else if(total>=70){
+grade="A";
+risk="Strong Financial Stability";
+}
+else if(total>=60){
+grade="BBB";
+risk="Adequate Credit Strength";
+}
+else if(total>=50){
+grade="BB";
+risk="Moderate Credit Risk";
+}
+else if(total>=40){
+grade="B";
+risk="High Credit Risk";
+}
+else{
+grade="C";
+risk="Very High Default Risk";
+}
 
-radar(list.map(x=>x.score));
+document.getElementById("grade").innerText=grade;
+document.getElementById("score").innerText=`Credit Score : ${total}/100`;
+document.getElementById("risk").innerText=risk;
 
-let sorted=[...list].sort((a,b)=>b.score-a.score);
+drawRadar(items.map(x=>x.score));
 
+const sorted=[...items].sort((a,b)=>b.score-a.score);
+
+const strengths=document.getElementById("strengths");
 strengths.innerHTML="";
 sorted.slice(0,3).forEach(x=>{
-strengths.innerHTML+=`<li><b>${x.name}</b> is a major strength.</li>`;
+strengths.innerHTML+=`<li><b>${x.name}</b> is a significant strength.</li>`;
 });
 
-recom.innerHTML="";
+const advice={
+"Payment History":"Maintain timely repayment of all credit obligations.",
+"Current Ratio":"Increase current assets or reduce current liabilities.",
+"Quick Ratio":"Improve liquid assets and cash availability.",
+"Debt–Equity Ratio":"Reduce debt or strengthen shareholders' equity.",
+"Interest Coverage Ratio":"Increase EBIT or reduce interest burden.",
+"Cash Flow Strength":"Strengthen operating cash flow generation.",
+"Net Profit Margin (%)":"Improve profitability through cost efficiency.",
+"Business Stability (Years)":"Strengthen long-term business continuity.",
+"Industry Risk":"Diversify markets to reduce industry exposure.",
+"Management Quality":"Enhance governance and managerial effectiveness."
+};
+
+const rec=document.getElementById("recommendations");
+rec.innerHTML="";
 sorted.slice(-3).forEach(x=>{
-recom.innerHTML+=`<li>Improve <b>${x.name}</b>.</li>`;
+rec.innerHTML+=`<li>${advice[x.name]}</li>`;
 });
 
-let c=company.value||"the company";
-rationale.innerHTML=`LAKVISTA-PLUS assigns a <b>${g}</b> rating to <b>${c}</b> with a Credit Score of <b>${total}/100</b>. The assessment is based on liquidity, solvency, profitability and operational efficiency indicators.`;
+const company=document.getElementById("company").value || "the company";
+
+document.getElementById("rationale").innerHTML=
+`LAKVISTA-PLUS assigns a <b>${grade}</b> rating to <b>${company}</b> with a Credit Score of <b>${total}/100</b>. The assessment is based on repayment behaviour, liquidity, leverage, debt servicing capacity, cash flow strength, profitability, business stability, industry risk and management quality.`;
 
 }
 
-adate.value=new Date().toISOString().split("T")[0];
-calc();
+document.getElementById("adate").value=
+new Date().toISOString().split("T")[0];
+
+calculate();
 </script>
 
 </body>
