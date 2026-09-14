@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAKVISTA™ PLUS</title>
+<style>
+body{font-family:Arial;background:#eef4fb;margin:0;padding:16px}
+.card{max-width:700px;margin:auto;background:#fff;border-radius:18px;padding:18px}
+h1{text-align:center;color:#0A4DA3;margin:0}
+.sub{text-align:center;color:#64748b;margin-bottom:15px}
+.item{margin:10px 0}.head{display:flex;justify-content:space-between;font-size:14px;font-weight:bold}
+input[type=text],input[type=range]{width:100%}
+input[type=text]{padding:8px;border:1px solid #ccc;border-radius:8px}
+button{width:100%;padding:12px;background:#0A4DA3;color:#fff;border:0;border-radius:10px;margin-top:12px}
+.result,.box{margin-top:14px;background:#f8fbff;padding:12px;border-radius:12px}
+.rate{font-size:38px;font-weight:bold;text-align:center;color:#0A4DA3}
+.score{text-align:center;font-size:20px}
+svg{width:100%;height:260px}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>LAKVISTA™ PLUS</h1>
+<div class="sub">Business Credit Rating Simulator</div>
+
+<input type="text" id="company" placeholder="Company Name">
+<div id="sliders"></div>
+
+<button onclick="calculate()">Calculate Credit Rating</button>
+
+<div class="result">
+<div class="rate" id="rating">--</div>
+<div class="score" id="score">0 / 100</div>
+<p id="desc" align="center">Business Credit Rating</p>
+</div>
+
+<div class="box">
+<h3>Financial Strength Radar</h3>
+<svg viewBox="0 0 300 300">
+<g stroke="#d1d5db" fill="none">
+<circle cx="150" cy="150" r="40"/>
+<circle cx="150" cy="150" r="80"/>
+<circle cx="150" cy="150" r="120"/>
+</g>
+<polygon id="radar" fill="#2563EB55" stroke="#2563EB" stroke-width="2"/>
+</svg>
+</div>
+
+<div class="box">
+<h3>Strengths</h3>
+<ul id="strengths"></ul>
+</div>
+
+<div class="box">
+<h3>Recommendations</h3>
+<ul id="reco"></ul>
+</div>
+
+<div class="box">
+<h3>Rating Rationale</h3>
+<p id="rationale"></p>
+</div>
+
+<button onclick="window.print()">Download PDF Report</button>
+</div>
+
+<script>
+const F=[
+["Payment History",0,100,85],
+["Current Ratio",0,5,2],
+["Quick Ratio",0,3,1.2],
+["Debt-Equity Ratio",0,5,1],
+["Interest Coverage",0,15,5],
+["ROA (%)",0,25,10],
+["ROCE (%)",0,30,15],
+["Net Profit Margin",0,30,12],
+["Operating Margin",0,30,18],
+["Total Asset Turnover",0,3,1.5]
+];
+
+const box=document.getElementById("sliders");
+F.forEach((x,i)=>{
+box.innerHTML+=`
+<div class="item">
+<div class="head">
+<span>${i+1}. ${x[0]}</span>
+<span id="v${i}">${x[3]}</span>
+</div>
+<input type="range" id="s${i}" min="${x[1]}" max="${x[2]}"
+step="0.1" value="${x[3]}"
+oninput="v${i}.innerHTML=this.value">
+</div>`;
+});
+
+function norm(i,v){
+const n=[
+v/100,
+Math.min(v,2)/2,
+Math.min(v,1),
+Math.max(0,(5-v))/5,
+Math.min(v,10)/10,
+Math.min(v,25)/25,
+Math.min(v,30)/30,
+Math.min(v,30)/30,
+Math.min(v,30)/30,
+Math.min(v,2)/2];
+return n[i];
+}
+
+function calculate(){
+let score=0,arr=[];
+for(let i=0;i<10;i++){
+let val=parseFloat(document.getElementById("s"+i).value);
+let n=norm(i,val);
+score+=n*10;
+arr.push({name:F[i][0],n});
+}
+score=Math.round(score);
+
+let r,d;
+if(score>=90){r="AAA";d="Exceptional Credit Quality";}
+else if(score>=80){r="AA";d="Very Strong Credit Profile";}
+else if(score>=70){r="A";d="Strong Financial Stability";}
+else if(score>=60){r="BBB";d="Adequate Credit Strength";}
+else if(score>=50){r="BB";d="Moderate Credit Risk";}
+else if(score>=40){r="B";d="High Credit Risk";}
+else{r="C";d="Very High Default Risk";}
+
+rating.innerHTML=r;
+score.innerHTML="Credit Score : "+score+"/100";
+desc.innerHTML=d;
+
+// Radar
+let pts="";
+arr.forEach((o,i)=>{
+let ang=(-90+i*36)*Math.PI/180;
+let rr=120*o.n;
+let x=150+rr*Math.cos(ang);
+let y=150+rr*Math.sin(ang);
+pts+=`${x},${y} `;
+});
+radar.setAttribute("points",pts);
+
+// Strengths
+arr.sort((a,b)=>b.n-a.n);
+strengths.innerHTML="";
+arr.slice(0,3).forEach(x=>{
+strengths.innerHTML+=<li><b>${x.name}</b></li>;
+});
+
+// Recommendations
+reco.innerHTML="";
+arr.slice(-3).forEach(x=>{
+reco.innerHTML+=<li>Improve <b>${x.name}</b></li>;
+});
+
+// Rationale
+const c=company.value||"the company";
+rationale.innerHTML=LAKVISTA assigns <b>${r}</b> to <b>${c}</b> with a credit score of <b>${score}/100</b>. The rating is based on liquidity, solvency, profitability and operational efficiency indicators.;
+}
+calculate();
+</script>
+</body>
+</html>
